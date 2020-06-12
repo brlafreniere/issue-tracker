@@ -11,6 +11,30 @@ function LoaderWidget(props) {
     )
 }
 
+class UserRegistration extends React.Component {
+    render() {
+        return (
+            <form className="rounded border p-3">
+                <div className="form-group">
+                    <label htmlFor="email">Email Address:</label>
+                    <input name="email" type="email" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Password:</label>
+                    <input name="password" type="password" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Confirm Password:</label>
+                    <input name="password" type="password" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <input className="btn btn-primary form-control" type="submit" value="Register" />
+                </div>
+            </form>
+        )
+    }
+}
+
 export default class IssueBrowser extends React.Component {
     constructor(props) {
         super(props)
@@ -73,13 +97,11 @@ export default class IssueBrowser extends React.Component {
         let {id} = useParams();
         let issue = props.issues.find(issue => issue.id = id)
         return (
-            <div>
+            <div className="card">
                 {props.redirect ? <Redirect to="/issues" /> : null}
-                <h3>{issue.title}</h3>
-                <div>
-                    {issue.body}
-                </div>
-                <div>
+                <div className="card-body">
+                    <h1 className="card-title">{issue.title}</h1>
+                    <p class="card-text">{issue.body}</p>
                     <button className="btn btn-primary" onClick={(e) => deleteIssue(issue.id)}>Delete</button>
                 </div>
             </div>
@@ -92,6 +114,7 @@ export default class IssueBrowser extends React.Component {
                 <nav className="nav">
                     <Link to="/issues" className="nav-link">All</Link>
                     <Link to="/issues/create" className="nav-link">New</Link>
+                    <Link to="/users/registration" className="nav-link">Register</Link>
                 </nav>
 
                 <div className="p-3">
@@ -99,12 +122,24 @@ export default class IssueBrowser extends React.Component {
                         <LoaderWidget />
                     :
                         <Switch>
+                            <Route exact path="/users/registration">
+                                <UserRegistration />
+                            </Route>
+
                             <Route exact path="/issues">
-                                <ul className="list-group">
-                                    {this.state.issues.map(issue => (
-                                        <li className="list-group-item" key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
-                                    ))}
-                                </ul>
+                                {this.state.issues.length > 0 ?
+                                    <ul className="list-group">
+                                        {this.state.issues.map(issue => (
+                                            <li className="list-group-item" key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
+                                        ))}
+                                    </ul>
+                                : 
+                                    <div className="card">
+                                        <div className="card-body">
+                                            There are no issues. Aren't you lucky?
+                                        </div>
+                                    </div>
+                                }
                             </Route>
 
                             <Route exact path="/issues/create">
@@ -123,16 +158,14 @@ export default class IssueBrowser extends React.Component {
                             </Route>
 
                             <Route exact path="/issues/:id">
-                                <div>
-                                    {this.state.redirect ? <Redirect to="/issues" /> : null}
-                                    {this.state.issues.length > 0 ? 
-                                        <this.IssueDetailWrapper 
-                                            issues={this.state.issues}
-                                            setLoading={this.setLoading}
-                                            doneLoading={this.doneLoading}
-                                            setRedirect={this.setRedirect} />
-                                    : null }
-                                </div>
+                                {this.state.redirect ? <Redirect to="/issues" /> : null}
+                                {this.state.issues.length > 0 ? 
+                                    <this.IssueDetailWrapper 
+                                        issues={this.state.issues}
+                                        setLoading={this.setLoading}
+                                        doneLoading={this.doneLoading}
+                                        setRedirect={this.setRedirect} />
+                                : null }
                             </Route>
                         </Switch>
                     }
