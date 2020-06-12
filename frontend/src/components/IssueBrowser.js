@@ -1,6 +1,6 @@
 import React from "react";
 import Issues from "../modules/issues";
-import { Switch, Route, Link, Redirect, useParams } from "react-router-dom";
+import { Switch, Route, NavLink, Link, Redirect, useParams } from "react-router-dom";
 
 import "./IssueBrowser.css";
 import loader_gif from "./loader.gif";
@@ -35,19 +35,35 @@ class UserRegistration extends React.Component {
     }
 }
 
+class NewIssueForm extends React.Component {
+    render() {
+        return (
+            <div>
+
+            </div>
+        )
+    }
+}
+
 export default class IssueBrowser extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
             issues: [],
             redirect: false,
-            loading: true
+            loading: true,
+            noResponseFromServer: false
         }
     }
 
     refreshIssues() {
         Issues.getAll()
             .then(issues => { this.setState({issues, loading: false}) })
+            .catch(error => {
+                if (!error.response) {
+                    this.setState({noResponseFromServer: true})
+                }
+            })
     }
 
     componentDidMount() {
@@ -108,14 +124,41 @@ export default class IssueBrowser extends React.Component {
         )
     }
 
+    IssueList = (props) => {
+        if (props.issues.length > 0) {
+            return (
+                <ul className="list-group">
+                    {props.issues.map(issue => (
+                        <li className="list-group-item" key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
+                    ))}
+                </ul>
+            )
+        } else if (!props.noResponseFromServer) {
+            return (
+                <div className="card">
+                    <div className="card-body">
+                        There are no issues. Aren't you lucky?
+                    </div>
+                </div>
+            )
+        }
+        return null;
+    }
+
     render() {
         return (
             <div>
                 <nav className="nav">
-                    <Link to="/issues" className="nav-link">All</Link>
-                    <Link to="/issues/create" className="nav-link">New</Link>
-                    <Link to="/users/registration" className="nav-link">Register</Link>
+                    <NavLink to="/issues" className="nav-link" activeClassName="active">All</NavLink>
+                    <NavLink to="/issues/create" className="nav-link" activeClassName="active">New</NavLink>
+                    <NavLink to="/users/registration" className="nav-link" activeClassName="active">Register</NavLink>
                 </nav>
+
+                {this.state.noResponseFromServer ? 
+                    <div className="alert alert-danger">
+                        No response received from server. Is it running?
+                    </div>
+                : null }
 
                 <div className="p-3">
                     {this.state.loading ?
@@ -127,19 +170,7 @@ export default class IssueBrowser extends React.Component {
                             </Route>
 
                             <Route exact path="/issues">
-                                {this.state.issues.length > 0 ?
-                                    <ul className="list-group">
-                                        {this.state.issues.map(issue => (
-                                            <li className="list-group-item" key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
-                                        ))}
-                                    </ul>
-                                : 
-                                    <div className="card">
-                                        <div className="card-body">
-                                            There are no issues. Aren't you lucky?
-                                        </div>
-                                    </div>
-                                }
+                                <this.IssueList issues={this.state.issues} noResponseFromServer={this.state.noResponseFromServer} />
                             </Route>
 
                             <Route exact path="/issues/create">
