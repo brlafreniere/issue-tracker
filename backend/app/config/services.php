@@ -11,6 +11,15 @@ use Phalcon\Session\Adapter\Stream as SessionAdapter;
 use Phalcon\Session\Manager as SessionManager;
 use Phalcon\Url as UrlResolver;
 
+$di->setShared('response', function () {
+    $response = new \Phalcon\Http\Response();
+    $response->setHeader('Access-Control-Allow-Origin', "*");
+    $response->setHeader('Access-Control-Allow-Headers', "x-requested-with, Content-Type, origin, authorization, accept, client-security-token");
+    $response->setHeader('Access-Control-Allow-Methods', "POST, GET, OPTIONS, DELETE, PUT");
+    $response->setHeader('Access-Control-Max-Age', "1000");
+    return $response;
+});
+
 /**
  * Shared configuration service
  */

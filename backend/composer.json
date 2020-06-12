@@ -1,0 +1,11 @@
+{
+    "require-dev": {
+        "phalcon/devtools": "~4.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "robmorgan/phinx": "^0.12.1",
+        "symfony/yaml": "^5.1"
+    }
+}
