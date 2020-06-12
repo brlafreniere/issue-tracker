@@ -8,22 +8,7 @@ function App() {
     return (
         <div className="App container">
             <BrowserRouter>
-                <nav className="nav">
-                    <Link to="/" className="nav-link">Home</Link>
-                    <Link to="/issues" className="nav-link">Issue Browser</Link>
-                </nav>
-
-                <main>
-                    <Switch>
-                        <Route exact path="/">
-                            Home Page
-                        </Route>
-
-                        <Route path="/issues">
-                            <IssueBrowser />
-                        </Route>
-                    </Switch>
-                </main>
+                <IssueBrowser />
             </BrowserRouter>
         </div>
     );

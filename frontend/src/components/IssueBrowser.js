@@ -90,7 +90,8 @@ export default class IssueBrowser extends React.Component {
         return (
             <div>
                 <nav className="nav">
-                    <Link to="/issues/create" className="nav-link">Create Issue</Link>
+                    <Link to="/issues" className="nav-link">All</Link>
+                    <Link to="/issues/create" className="nav-link">New</Link>
                 </nav>
 
                 <div className="p-3">
@@ -99,11 +100,11 @@ export default class IssueBrowser extends React.Component {
                     :
                         <Switch>
                             <Route exact path="/issues">
-                                <ol>
+                                <ul className="list-group">
                                     {this.state.issues.map(issue => (
-                                        <li key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
+                                        <li className="list-group-item" key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
                                     ))}
-                                </ol>
+                                </ul>
                             </Route>
 
                             <Route exact path="/issues/create">
