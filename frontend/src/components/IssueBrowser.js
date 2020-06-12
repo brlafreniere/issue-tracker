@@ -38,9 +38,17 @@ class UserRegistration extends React.Component {
 class NewIssueForm extends React.Component {
     render() {
         return (
-            <div>
-
-            </div>
+            <form className="border rounded p-3" onSubmit={this.props.createIssueCallBack}>
+                <div className="form-group">
+                    <label htmlFor="title">Title</label>
+                    <input className="form-control" name="title" type="text" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="body">Body</label>
+                    <textarea name="body" className="form-control" rows="10"></textarea>
+                </div>
+                <input type="submit" className="btn btn-primary" />
+            </form>
         )
     }
 }
@@ -175,17 +183,7 @@ export default class IssueBrowser extends React.Component {
 
                             <Route exact path="/issues/create">
                                 {this.state.redirect ? <Redirect to="/issues" /> : null}
-                                <form onSubmit={this.createIssue}>
-                                    <div className="form-group">
-                                        <label htmlFor="title">Title</label>
-                                        <input className="form-control" name="title" type="text" />
-                                    </div>
-                                    <div className="form-group">
-                                        <label htmlFor="body">Body</label>
-                                        <textarea name="body" className="form-control" rows="10"></textarea>
-                                    </div>
-                                    <input type="submit" className="btn btn-primary" />
-                                </form>
+                                <NewIssueForm createIssueCallBack={this.createIssue} />
                             </Route>
 
                             <Route exact path="/issues/:id">
