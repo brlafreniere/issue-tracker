@@ -6,6 +6,7 @@ require_once("../app/models/Issues.php");
 
 use Phalcon\Helper\Json;
 use Phalcon\Http\Request;
+use Phalcon\Http\Response;
 
 use IssueTracker\Models\Issues;
 
@@ -40,9 +41,12 @@ class IssuesController extends \Phalcon\Mvc\Controller {
 
         $issue = Issues::findFirst("id = $id");
 
-        $result = $issue->delete();
-
-        echo Json::encode($result);
+        if ($issue) {
+            $result = $issue->delete();
+            echo Json::encode($result);
+        } else {
+            $this->response->setStatusCode(404);
+        }
     }
 }
 

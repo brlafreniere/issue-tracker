@@ -83,7 +83,7 @@ export default class IssueBrowser extends React.Component {
         }
 
         let {id} = useParams();
-        let issue = this.state.issues.find(issue => issue.id = id)
+        let issue = this.state.issues.find(issue => issue.id == id)
 
         if (issue) {
             return (
@@ -145,7 +145,7 @@ export default class IssueBrowser extends React.Component {
                     </Route>
 
                     <Route exact path="/issues/">
-                        <this.IssueList issues={this.state.issues} />
+                        <this.IssueList />
                     </Route>
 
                 </Switch>
@@ -153,16 +153,23 @@ export default class IssueBrowser extends React.Component {
         }
     }
 
+    IssueListItem = (props) => {
+        return (
+            <li className="list-group-item" key={props.issue.id}>
+                ID: {props.issue.id} <br />
+                <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
+            </li>
+        )
+    }
+
     IssueList = (props) => {
-        if (props.issues.length > 0) {
+        if (this.state.issues.length > 0) {
             return (
                 <ul className="list-group list-group-flush">
-                    {props.issues.map(issue => (
-                        <li className="list-group-item" key={issue.id}><Link to={"/issues/" + issue.id}>{issue.title}</Link></li>
-                    ))}
+                    {this.state.issues.map(issue => <this.IssueListItem key={issue.id} issue={issue} />)}
                 </ul>
             )
-        } else if (!props.noResponseFromServer) {
+        } else if (!this.state.noResponseFromServer) {
             return (
                 <div>
                     There are no issues. Aren't you lucky?
