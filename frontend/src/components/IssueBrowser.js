@@ -60,7 +60,7 @@ export default class IssueBrowser extends React.Component {
         }
 
         const IssueList = (props) => {
-                if (this.state.issues.length > 0) {
+                if (this.state.issues && this.state.issues.length > 0) {
                     return (
                         <ul className="list-group list-group-flush">
                             {this.state.issues.map(issue => <IssueListItem key={issue.id} issue={issue} />)}
