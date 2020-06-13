@@ -7,9 +7,11 @@ import IssueBrowser from "./components/IssueBrowser";
 function App() {
     return (
         <div className="App container">
-            <BrowserRouter>
-                <IssueBrowser />
-            </BrowserRouter>
+            <React.StrictMode>
+                <BrowserRouter>
+                    <IssueBrowser />
+                </BrowserRouter>
+            </React.StrictMode>
         </div>
     );
 }

@@ -5,6 +5,10 @@ import { Switch, Route, NavLink, Link, Redirect, useParams } from "react-router-
 import "./IssueBrowser.css";
 import loader_gif from "./loader.gif";
 
+
+
+
+
 export default class IssueBrowser extends React.Component {
     constructor(props) {
         super(props)
@@ -12,30 +16,158 @@ export default class IssueBrowser extends React.Component {
             issues: [],
             redirect: false,
             loading: true,
-            noResponseFromServer: false
+            noResponse: false
         }
     }
 
     render() {
+        NewIssueForm = (props) => {
+            return (
+                <form onSubmit={this.createIssue}>
+                    <div className="form-group">
+                        <label htmlFor="title">Title</label>
+                        <input className="form-control" name="title" type="text" />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="body">Body</label>
+                        <textarea name="body" className="form-control" rows="10"></textarea>
+                    </div>
+                    <input type="submit" className="btn btn-primary" />
+                </form>
+            )
+        }
+
+        const IssueDetail = (props) => {
+            let {id} = useParams()
+            let issue = this.state.issues.find(issue => issue.id == id)
+
+            if (issue) {
+                return (
+                    <div>
+                        <h1 className="card-title">{issue.title}</h1>
+                        <p className="card-text">{issue.body}</p>
+                        <button className="btn btn-primary" onClick={(e) => this.deleteIssue(issue.id)}>Delete</button>
+                    </div>
+                )
+            } else {
+                return null
+            }
+        }
+
+        const IssueListItem = (props) => {
+            return (
+                <li className="list-group-item" key={props.issue.id}>
+                    ID: {props.issue.id} <br />
+                    <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
+                </li>
+            )
+        }
+
+        const IssueList = (props) => {
+                if (this.state.issues.length > 0) {
+                    return (
+                        <ul className="list-group list-group-flush">
+                            {this.state.issues.map(issue => <IssueListItem key={issue.id} issue={issue} />)}
+                        </ul>
+                    )
+                } else if (!this.state.noResponse) {
+                    return (
+                        <div>
+                            There are no issues. Aren't you lucky?
+                        </div>
+                    )
+                }
+                return null;
+        }
+
+        const MainSwitch = (props) => {
+            if (this.state.loading) {
+                return (
+                    <div align="center">
+                        <LoaderWidget />
+                    </div>
+                )
+            } else {
+                return (
+                    <Switch>
+                        <Route exact path="/users/registration">
+                            <UserRegistration />
+                        </Route>
+
+                        <Route exact path="/issues/create/">
+                            {this.state.redirect ? <Redirect to="/" /> : null}
+                            <NewIssueForm />
+                        </Route>
+
+                        <Route exact path="/issues/:id">
+                            {this.state.redirect ? <Redirect to="/" /> : null}
+                            <IssueDetail />
+                        </Route>
+
+                        <Route exact path="/">
+                            <IssueList />
+                        </Route>
+
+                    </Switch>
+                )
+            }
+        }
+
         return (
             <div className="mt-5">
                 <this.Navigation />
-                <this.NoResponseFromServer noResponseFromServer={this.state.noResponseFromServer} />
+                <this.NoResponseFromServer noResponse={this.state.noResponse} />
                 <div className="p-3 border border-top-0 rounded-bottom">
-                    <this.MainSwitch />
+                    <MainSwitch />
                 </div>
             </div>
         )
     }
 
-    refreshIssues() {
+    deleteIssue = (issue_id) => {
+        this.setState({redirect: true, loading: true})
+        Issues.delete(issue_id)
+            .then(response => { this.refreshIssues() })
+    }
+
+    createIssue = (event) => {
+        event.preventDefault()
+
+        let payload = {
+            title: event.target.title.value,
+            body: event.target.body.value }
+
+        this.setState({redirect: true, loading: true})
+        console.log(this.state)
+        Issues.create(payload)
+            .then(response => { console.log(this.state); this.issueCreated() })
+            .catch(error => { console.log(error) })
+    }
+
+    issueCreated = () => {
+        console.log(this.state)
+        this.refreshIssues();
+    }
+
+    setFlag = (flagKey, flagValue) => {
+        this.setState({[flagKey]: flagValue})
+    }
+
+    refreshIssues = () => {
         Issues.getAll()
-            .then(issues => { this.setState({issues, loading: false}) })
-            .catch(error => {
-                if (!error.response) {
-                    this.setState({noResponseFromServer: true})
-                }
+            .then(issues => {
+                console.log(this.state)
+                this.setState({issues, loading: false})
+                console.log(this.state)
             })
+            .catch(error => {
+                if (!error.response) { this.setFlag('noResponse', true) }
+            })
+    }
+
+    clearFlags = () => {
+        console.log("here")
+        this.setState({ loading: false, redirect: false, noResponse: false })
     }
 
     componentDidMount() {
@@ -46,60 +178,11 @@ export default class IssueBrowser extends React.Component {
         if (prevState.redirect) {
             this.setState({redirect: false})
         }
-
-        if (prevState.loading) {
-            this.setState({loading: false})
-        }
     }
 
-    createIssue = (event) => {
-        event.preventDefault()
-        let payload = {
-            title: event.target.title.value,
-            body: event.target.body.value }
-        Issues.create(payload)
-            .then(response => { this.refreshIssues(); this.setState({redirect: true}) })
-            .catch(error => { console.log(error) })
-    }
-
-    setRedirect = () => {
-        this.setState({redirect: true})
-    }
-
-    setLoading = () => {
-        this.setState({loading: true})
-    }
-
-    doneLoading = () => {
-        this.refreshIssues()
-    }
-
-    IssueDetail = (props) => {
-        let deleteIssue = (issue_id) => {
-            this.setLoading()
-            this.setRedirect();
-            Issues.delete(issue_id)
-                .then(response => { this.doneLoading() })
-        }
-
-        let {id} = useParams();
-        let issue = this.state.issues.find(issue => issue.id == id)
-
-        if (issue) {
-            return (
-                <div>
-                    <h1 className="card-title">{issue.title}</h1>
-                    <p className="card-text">{issue.body}</p>
-                    <button className="btn btn-primary" onClick={(e) => deleteIssue(issue.id)}>Delete</button>
-                </div>
-            )
-        } else {
-            return null;
-        }
-    }
 
     NoResponseFromServer = (props) => {
-        if (this.state.noResponseFromServer) {
+        if (this.state.noResponse) {
             return (
                 <div className="alert alert-danger">
                     No response received from server. Is it running?
@@ -113,71 +196,15 @@ export default class IssueBrowser extends React.Component {
     Navigation = (props) => {
         return (
             <nav className="nav nav-tabs">
-                <li className="nav-item"><NavLink to="/issues/" exact={true} className="nav-link" activeClassName="active">All</NavLink></li>
+                <li className="nav-item"><NavLink to="/" exact={true} className="nav-link" activeClassName="active">All</NavLink></li>
                 <li className="nav-item"><NavLink to="/issues/create/" className="nav-link" activeClassName="active">New</NavLink></li>
                 <li className="nav-item"><NavLink to="/users/registration/" className="nav-link" activeClassName="active">Register</NavLink></li>
             </nav>
         )
     }
 
-    MainSwitch = (props) => {
-        if (this.state.loading) {
-            return (
-                <div align="center">
-                    <LoaderWidget />
-                </div>
-            )
-        } else {
-            return (
-                <Switch>
-                    <Route exact path="/users/registration">
-                        <UserRegistration />
-                    </Route>
 
-                    <Route exact path="/issues/create/">
-                        {this.state.redirect ? <Redirect to="/issues" /> : null}
-                        <NewIssueForm createIssueCallBack={this.createIssue} />
-                    </Route>
 
-                    <Route exact path="/issues/:id">
-                        {this.state.redirect ? <Redirect to="/issues" /> : null}
-                        <this.IssueDetail />
-                    </Route>
-
-                    <Route exact path="/issues/">
-                        <this.IssueList />
-                    </Route>
-
-                </Switch>
-            )
-        }
-    }
-
-    IssueListItem = (props) => {
-        return (
-            <li className="list-group-item" key={props.issue.id}>
-                ID: {props.issue.id} <br />
-                <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
-            </li>
-        )
-    }
-
-    IssueList = (props) => {
-        if (this.state.issues.length > 0) {
-            return (
-                <ul className="list-group list-group-flush">
-                    {this.state.issues.map(issue => <this.IssueListItem key={issue.id} issue={issue} />)}
-                </ul>
-            )
-        } else if (!this.state.noResponseFromServer) {
-            return (
-                <div>
-                    There are no issues. Aren't you lucky?
-                </div>
-            )
-        }
-        return null;
-    }
 }
 
 class UserRegistration extends React.Component {
@@ -205,21 +232,6 @@ class UserRegistration extends React.Component {
 }
 
 class NewIssueForm extends React.Component {
-    render() {
-        return (
-            <form onSubmit={this.props.createIssueCallBack}>
-                <div className="form-group">
-                    <label htmlFor="title">Title</label>
-                    <input className="form-control" name="title" type="text" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="body">Body</label>
-                    <textarea name="body" className="form-control" rows="10"></textarea>
-                </div>
-                <input type="submit" className="btn btn-primary" />
-            </form>
-        )
-    }
 }
 
 function LoaderWidget(props) {
