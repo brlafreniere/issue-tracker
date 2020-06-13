@@ -5,10 +5,6 @@ import { Switch, Route, NavLink, Link, Redirect, useParams } from "react-router-
 import "./IssueBrowser.css";
 import loader_gif from "./loader.gif";
 
-
-
-
-
 export default class IssueBrowser extends React.Component {
     constructor(props) {
         super(props)
@@ -165,16 +161,18 @@ export default class IssueBrowser extends React.Component {
             })
     }
 
-    clearFlags = () => {
-        console.log("here")
-        this.setState({ loading: false, redirect: false, noResponse: false })
-    }
-
     componentDidMount() {
         this.refreshIssues()
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
+        // Have to clear redirect flag here. The redirect happens when the HTML
+        // is re-rendered, because redirects happen via <Redirect /> tag. but we
+        // were clearing the flag before any re-rendering happened, meaning
+        // <Redirect /> was never even being rendered in the first place. So
+        // after a re-render takes place, check to see if redirect = true, then
+        // clear it. Doing it this way gives the <Redirect /> component a chance
+        // to be rendered before being cleared.
         if (prevState.redirect) {
             this.setState({redirect: false})
         }
@@ -202,9 +200,6 @@ export default class IssueBrowser extends React.Component {
             </nav>
         )
     }
-
-
-
 }
 
 class UserRegistration extends React.Component {
@@ -229,9 +224,6 @@ class UserRegistration extends React.Component {
             </form>
         )
     }
-}
-
-class NewIssueForm extends React.Component {
 }
 
 function LoaderWidget(props) {
