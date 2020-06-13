@@ -17,7 +17,7 @@ export default class IssueBrowser extends React.Component {
     }
 
     render() {
-        NewIssueForm = (props) => {
+        const NewIssueForm = (props) => {
             return (
                 <form onSubmit={this.createIssue}>
                     <div className="form-group">
