@@ -53,7 +53,6 @@ export default class IssueBrowser extends React.Component {
         const IssueListItem = (props) => {
             return (
                 <li className="list-group-item" key={props.issue.id}>
-                    ID: {props.issue.id} <br />
                     <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
                 </li>
             )
