@@ -3,7 +3,7 @@ import Issues from "../modules/issues";
 import { Switch, Route, NavLink, Link, Redirect, useParams } from "react-router-dom";
 
 import "./IssueBrowser.css";
-import loader_gif from "./loader.gif";
+import UserRegistration from "./UserRegistration";
 
 export default class IssueBrowser extends React.Component {
     constructor(props) {
@@ -35,7 +35,7 @@ export default class IssueBrowser extends React.Component {
 
         const IssueDetail = (props) => {
             let {id} = useParams()
-            let issue = this.state.issues.find(issue => issue.id == id)
+            let issue = this.state.issues.find(issue => issue.id === id)
 
             if (issue) {
                 return (
@@ -79,7 +79,6 @@ export default class IssueBrowser extends React.Component {
             if (this.state.loading) {
                 return (
                     <div align="center">
-                        <LoaderWidget />
                     </div>
                 )
             } else {
@@ -133,14 +132,12 @@ export default class IssueBrowser extends React.Component {
             body: event.target.body.value }
 
         this.setState({redirect: true, loading: true})
-        console.log(this.state)
         Issues.create(payload)
             .then(response => { console.log(this.state); this.issueCreated() })
             .catch(error => { console.log(error) })
     }
 
     issueCreated = () => {
-        console.log(this.state)
         this.refreshIssues();
     }
 
@@ -151,9 +148,7 @@ export default class IssueBrowser extends React.Component {
     refreshIssues = () => {
         Issues.getAll()
             .then(issues => {
-                console.log(this.state)
                 this.setState({issues, loading: false})
-                console.log(this.state)
             })
             .catch(error => {
                 if (!error.response) { this.setFlag('noResponse', true) }
@@ -199,34 +194,4 @@ export default class IssueBrowser extends React.Component {
             </nav>
         )
     }
-}
-
-class UserRegistration extends React.Component {
-    render() {
-        return (
-            <form>
-                <div className="form-group">
-                    <label htmlFor="email">Email Address:</label>
-                    <input name="email" type="email" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password:</label>
-                    <input name="password" type="password" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Confirm Password:</label>
-                    <input name="password" type="password" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <input className="btn btn-primary form-control" type="submit" value="Register" />
-                </div>
-            </form>
-        )
-    }
-}
-
-function LoaderWidget(props) {
-    return (
-        <img src={loader_gif} width="50" alt="loading..." />
-    )
 }
