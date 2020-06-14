@@ -30,4 +30,8 @@ class AppLogger {
 
 AppLogger::initialize();
 
+function debug($thing) {
+    AppLogger::$logger->debug(print_r($thing, true));
+}
+
 ?>
