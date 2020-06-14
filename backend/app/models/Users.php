@@ -24,7 +24,7 @@ class Users extends \Phalcon\Mvc\Model
     }
 
     public function beforeValidation() {
-        $this->created_at = new \Phalcon\Db\RawValue('FROM_UNIXTIME()'); 
+        $this->created_at = date('Y-m-d H:i:s', time());; 
         $this->generatePasswordHash();
     }
 
