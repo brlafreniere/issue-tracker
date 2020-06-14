@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+require_once("../app/library/logger.php");
+
+use Phalcon\Helper\Json;
+
 class UsersController extends ControllerBase {
     public function indexAction() {
 
@@ -18,7 +22,12 @@ class UsersController extends ControllerBase {
         $user->email_address = $formData->email_address;
         $user->password = $formData->password;
 
-        $result = $user->save();
+        try {
+            $result = $user->save();
+            echo Json::encode($result);
+        } catch (Exception $e) { 
+            debug($e);
+        }
     }
 }
 
