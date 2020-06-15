@@ -5,6 +5,8 @@ import "./LoaderWidget.css";
 
 export default function LoaderWidget(props) {
     return (
-        <img class='loader-widget' src={loader_gif} width="150" alt="loading..." />
+        <div className='loader-widget'>
+            <img src={loader_gif} width="150" alt="loading..." />
+        </div>
     )
 }

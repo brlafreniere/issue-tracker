@@ -1,197 +1,263 @@
-import React from "react";
-import Issues from "../modules/issues";
-import { Switch, Route, NavLink, Link, Redirect, useParams } from "react-router-dom";
+import React, { useContext } from "react"
+import Issues from "../modules/issues"
+import Users from "../modules/user"
+
+import {
+    Switch,
+    Route,
+    NavLink,
+    Link,
+    useParams,
+    useHistory
+} from "react-router-dom"
 
 import "./IssueBrowser.css";
-import UserRegistration from "./UserRegistration";
+import AppContext from "../AppContext"
 
-export default class IssueBrowser extends React.Component {
-    constructor(props) {
-        super(props)
-        this.state = {
-            issues: [],
-            redirect: false,
-            loading: true,
-            noResponse: false
-        }
-    }
+const IssueBrowserContext = React.createContext();
 
-    render() {
-        const NewIssueForm = (props) => {
-            return (
-                <form onSubmit={this.createIssue}>
-                    <div className="form-group">
-                        <label htmlFor="title">Title</label>
-                        <input className="form-control" name="title" type="text" />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="body">Body</label>
-                        <textarea name="body" className="form-control" rows="10"></textarea>
-                    </div>
-                    <input type="submit" className="btn btn-primary" />
-                </form>
-            )
-        }
+export default function IssueBrowserWithHistory(props) {
+    let history = useHistory()
+    return (<IssueBrowser history={history} />)
+}
 
-        const IssueDetail = (props) => {
-            let {id} = useParams()
-            let issue = this.state.issues.find(issue => issue.id === id)
+const NewIssueForm = (props) => {
+    const context = useContext(IssueBrowserContext)
+    return (
+        <form onSubmit={context.createIssue}>
+            <div className="form-group">
+                <label htmlFor="title">Title</label>
+                <input className="form-control" name="title" type="text" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="body">Body</label>
+                <textarea name="body" className="form-control" rows="10"></textarea>
+            </div>
+            <input type="submit" className="btn btn-primary" />
+        </form>
+    )
+}
 
-            if (issue) {
-                return (
-                    <div>
-                        <h1 className="card-title">{issue.title}</h1>
-                        <p className="card-text">{issue.body}</p>
-                        <button className="btn btn-primary" onClick={(e) => this.deleteIssue(issue.id)}>Delete</button>
-                    </div>
-                )
-            } else {
-                return null
-            }
-        }
+const IssueDetail = (props) => {
+    const context = useContext(IssueBrowserContext)
+    let {id} = useParams()
+    let issue = context.issues.find(issue => issue.id === id)
 
-        const IssueListItem = (props) => {
-            return (
-                <li className="list-group-item" key={props.issue.id}>
-                    <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
-                </li>
-            )
-        }
-
-        const IssueList = (props) => {
-                if (this.state.issues && this.state.issues.length > 0) {
-                    return (
-                        <ul className="list-group list-group-flush">
-                            {this.state.issues.map(issue => <IssueListItem key={issue.id} issue={issue} />)}
-                        </ul>
-                    )
-                } else if (!this.state.noResponse) {
-                    return (
-                        <div>
-                            There are no issues. Aren't you lucky?
-                        </div>
-                    )
-                }
-                return null;
-        }
-
-        const MainSwitch = (props) => {
-            if (this.state.loading) {
-                return (
-                    <div align="center">
-                    </div>
-                )
-            } else {
-                return (
-                    <Switch>
-                        <Route exact path="/users/registration">
-                            <UserRegistration />
-                        </Route>
-
-                        <Route exact path="/issues/create/">
-                            {this.state.redirect ? <Redirect to="/" /> : null}
-                            <NewIssueForm />
-                        </Route>
-
-                        <Route exact path="/issues/:id">
-                            {this.state.redirect ? <Redirect to="/" /> : null}
-                            <IssueDetail />
-                        </Route>
-
-                        <Route exact path="/">
-                            <IssueList />
-                        </Route>
-
-                    </Switch>
-                )
-            }
-        }
-
+    if (issue) {
         return (
-            <div className="mt-5">
-                <this.Navigation />
-                <this.NoResponseFromServer noResponse={this.state.noResponse} />
-                <div className="p-3 border border-top-0 rounded-bottom">
-                    <MainSwitch />
-                </div>
+            <div>
+                <h1 className="card-title">{issue.title}</h1>
+                <p className="card-text">{issue.body}</p>
+                <button className="btn btn-primary" onClick={(e) => context.deleteIssue(issue.id)}>Delete</button>
             </div>
         )
+    } else {
+        return null
     }
+}
+
+const IssueListItem = (props) => {
+    return (
+        <li className="list-group-item" key={props.issue.id}>
+            <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
+        </li>
+    )
+}
+
+const IssueList = (props) => {
+    const context = useContext(IssueBrowserContext)
+    return (
+        <ul className="list-group list-group-flush">
+            {context.issues.map(issue => <IssueListItem key={issue.id} issue={issue} />)}
+        </ul>
+    )
+}
+
+const MainSwitch = (props) => {
+    return (
+        <Switch>
+            <Route exact path="/users/registration">
+                <UserRegistrationWithHistory />
+            </Route>
+
+            <Route exact path="/issues/create/">
+                <NewIssueForm />
+            </Route>
+
+            <Route exact path="/issues/:id">
+                <IssueDetail />
+            </Route>
+
+            <Route exact path="/">
+                <IssueList />
+            </Route>
+
+        </Switch>
+    )
+}
+
+const NoResponseFromServer = (props) => {
+    if (props.noResponse) {
+        return (
+            <div className="alert alert-danger">
+                No response received from server. Is it running?
+            </div>
+        )
+    } else {
+        return null;
+    }
+}
+
+const Navigation = (props) => {
+    return (
+        <nav className="nav nav-tabs">
+            <li className="nav-item"><NavLink to="/" exact={true} className="nav-link" activeClassName="active">All</NavLink></li>
+            <li className="nav-item"><NavLink to="/issues/create/" className="nav-link" activeClassName="active">New</NavLink></li>
+            <li className="nav-item"><NavLink to="/users/registration/" className="nav-link" activeClassName="active">Register</NavLink></li>
+        </nav>
+    )
+}
+
+
+class IssueBrowser extends React.Component {
+    static contextType = AppContext
 
     deleteIssue = (issue_id) => {
-        this.setState({redirect: true, loading: true})
+        this.context.setLoaded(false)
+
         Issues.delete(issue_id)
-            .then(response => { this.refreshIssues() })
+            .then(response => { 
+                this.refreshIssues() 
+                this.props.history.push('/')
+            })
     }
 
     createIssue = (event) => {
         event.preventDefault()
+        this.context.setLoaded(false)
 
         let payload = {
             title: event.target.title.value,
             body: event.target.body.value }
 
-        this.setState({redirect: true, loading: true})
         Issues.create(payload)
-            .then(response => { console.log(this.state); this.issueCreated() })
+            .then(response => { 
+                this.refreshIssues()
+                this.props.history.push('/')
+            })
             .catch(error => { console.log(error) })
     }
 
-    issueCreated = () => {
-        this.refreshIssues();
+    state = {
+        issues: [],
+        noResponse: false,
+
+        createIssue: this.createIssue,
+        deleteIssue: this.deleteIssue,
     }
 
-    setFlag = (flagKey, flagValue) => {
-        this.setState({[flagKey]: flagValue})
+    render() {
+        return (
+            <div className="mt-5">
+                <Navigation />
+                <NoResponseFromServer noResponse={this.state.noResponse} />
+                <div className="p-3 border border-top-0 rounded-bottom">
+                    <IssueBrowserContext.Provider value={this.state}>
+                        <MainSwitch />
+                    </IssueBrowserContext.Provider>
+                </div>
+            </div>
+        )
     }
 
     refreshIssues = () => {
         Issues.getAll()
             .then(issues => {
-                this.setState({issues, loading: false})
-            })
+                this.setState({issues})
+                this.context.setLoaded(true)
+             })
             .catch(error => {
-                if (!error.response) { this.setFlag('noResponse', true) }
+                if (!error.response) { 
+                    this.setState({noResponse: true})
+                }
+                this.context.setLoaded(true)
             })
     }
 
     componentDidMount() {
         this.refreshIssues()
     }
+}
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        // Have to clear redirect flag here. The redirect happens when the HTML
-        // is re-rendered, because redirects happen via <Redirect /> tag. but we
-        // were clearing the flag before any re-rendering happened, meaning
-        // <Redirect /> was never even being rendered in the first place. So
-        // after a re-render takes place, check to see if redirect = true, then
-        // clear it. Doing it this way gives the <Redirect /> component a chance
-        // to be rendered before being cleared.
-        if (prevState.redirect) {
-            this.setState({redirect: false})
-        }
+function UserRegistrationWithHistory(props) {
+    let history = useHistory();
+    return (<UserRegistration history={history} />)
+}
+
+class UserRegistration extends React.Component {
+    static contextType = AppContext
+
+    registerUser = (event) => {
+        event.preventDefault()
+        this.context.setLoaded(false)
+
+        // TODO: check if password matches confirmation, display error message
+        // if it doesn't
+
+        let payload = {
+            first_name: event.target.first_name.value,
+            last_name: event.target.last_name.value,
+            email_address: event.target.email_address.value,
+            password: event.target.password.value }
+
+        Users.create(payload)
+            .then(response => { 
+                this.context.setStatusMessage("success", "User successfully registered.")
+                this.context.setLoaded(true)
+            })
+            .catch(error => { 
+                if (error.response.data.messages) { this.context.setErrorMessages(error.response.data.messages) }
+                this.context.setLoaded(true)
+            })
+
+        this.setState({redirect: true})
     }
 
-
-    NoResponseFromServer = (props) => {
-        if (this.state.noResponse) {
-            return (
-                <div className="alert alert-danger">
-                    No response received from server. Is it running?
-                </div>
-            )
-        } else {
-            return null;
-        }
+    componentWillUnmount() {
+        this.context.clearAllMessages()
     }
 
-    Navigation = (props) => {
+    componentDidMount() {
+        this.context.clearAllMessages()
+    }
+
+    render() {
         return (
-            <nav className="nav nav-tabs">
-                <li className="nav-item"><NavLink to="/" exact={true} className="nav-link" activeClassName="active">All</NavLink></li>
-                <li className="nav-item"><NavLink to="/issues/create/" className="nav-link" activeClassName="active">New</NavLink></li>
-                <li className="nav-item"><NavLink to="/users/registration/" className="nav-link" activeClassName="active">Register</NavLink></li>
-            </nav>
+            <form onSubmit={this.registerUser}>
+                <div className="form-group">
+                    <label htmlFor="first_name">First Name:</label>
+                    <input name="first_name" type="text" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="last_name">Last Name:</label>
+                    <input name="last_name" type="text" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="email_address">Email Address:</label>
+                    <input name="email_address" type="text" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Password:</label>
+                    <input name="password" type="password" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Confirm Password:</label>
+                    <input name="password" type="password" className="form-control" />
+                </div>
+                <div className="form-group">
+                    <input className="btn btn-primary form-control" type="submit" value="Register" />
+                </div>
+            </form>
         )
     }
 }
