@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once("../app/library/logger.php");
+require_once("../app/library/jwt.php");
 
 use Phalcon\Helper\Json;
 
@@ -24,9 +25,24 @@ class UsersController extends ControllerBase {
 
         try {
             $result = $user->save();
-            echo Json::encode($result);
+            if ($result === false) {
+                $this->response->setStatusCode(422);
+                $messages = $user->getMessages();
+                echo Json::encode(["messages" => $messages]);
+            } else {
+                $payload = ["user_id" => $user->id];
+                $jwt = IssueTracker\JWT::generate_token($payload);
+                $JSONResponse = Json::encode(["jwt" => $jwt]);
+                echo $JSONResponse;
+            }
         } catch (Exception $e) { 
             debug($e);
+            
+            // 1062: duplicate entry primary index (email address)
+            if ($e->errorInfo[1] == 1062) {
+                $this->response->setStatusCode(422);
+                echo Json::encode(["messages" => [["message" => "Email address already taken."]] ]);
+            }
         }
     }
 }
