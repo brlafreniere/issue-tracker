@@ -1,83 +1,58 @@
-import React from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import './App.css';
 import { BrowserRouter } from "react-router-dom"
-
-import AppContext from "./AppContext"
 
 import IssueBrowser from "./components/IssueBrowser"
 import ErrorMessages from "./components/ErrorMessages"
 import LoaderWidget from "./components/LoaderWidget"
 
-class App extends React.Component {
-    // For errors in the format of:
-    // [{message: "first_name missing..."}, {message: "Email address in use..."}]
-    setErrorMessages = (errorMessages) => { 
-        this.setState({errorMessages}) }
-    // Other messages not in the format above. Can set "alert-warning" or
-    // "alert-success" type messages.
-    setStatusMessage = (statusType, statusMessage) => {
-        this.setState({statusType, statusMessage}) }
+const AppContext = React.createContext({})
 
-    clearAllMessages = () => {
-        this.setState({errorMessages: [], statusType: null, statusMessage: null}) }
+export {AppContext}
 
+const StatusMessage = (props) => {
+    const appContext = useContext(AppContext)
 
-    setAuthToken = () => {}
-    setLoaded = (val) => { this.setState({loaded: val}) }
+    useEffect(() => {
+        appContext.setMessagesRendered(true)
+    }, [])
 
+    return (
+        <div className={"alert alert-" + props.message.type}>
+            {props.message.text}
+        </div>
+    )
+}
 
-    state = {
-        user: {},
+function App(props) {
+    const [statusMessage, setStatusMessage] = useState(null)
+    const [loaded, setLoaded] = useState(false)
+    const [user, setUser] = useState(null)
+    const [errors, setErrors] = useState(null)
+    const [messagesRendered, setMessagesRendered] = useState(null)
 
-        loaded: false,
-        errorMessages: [],
-        statusType: null,
-        statusMessage: null,
-
-        setErrorMessages: this.setErrorMessages,
-        clearAllMessages: this.clearAllMessages,
-        setStatusMessage: this.setStatusMessage,
-
-        setLoading: this.setLoading,
-        setLoaded: this.setLoaded,
-        setAuthToken: this.setAuthToken,
+    const contextValue = {
+        statusMessage, setStatusMessage,
+        loaded, setLoaded,
+        user, setUser,
+        errors, setErrors,
+        messagesRendered, setMessagesRendered,
     }
 
-    // componentDidMount() {
-    //     this.setState({loading: false})
-    // }
-
-    // componentDidUpdate(prevProps, prevState, snapshot) {
-    //     if (prevState.errorMessages.length > 0) {
-    //         this.setState({errorMessages: []})
-    //     }
-
-    //     if (prevState.statusType !== null) {
-    //         this.setState({errorMessages: null})
-    //     }
-
-    //     if (prevState.statusMessage !== null) {
-    //         this.setState({statusMessage: null})
-    //     }
-    // }
-
-    render() {
-        return (
-            <div className="App container">
-                <React.StrictMode>
-                    <AppContext.Provider value={this.state}>
-                        <BrowserRouter>
-                            {this.state.statusMessage ? 
-                                <div className={"alert alert-" + this.state.statusType}>{this.state.statusMessage}</div> : null}
-                            <ErrorMessages errorMessages={this.state.errorMessages} />
-                            {!this.state.loaded ? <LoaderWidget /> : null }
-                            <IssueBrowser />
-                        </BrowserRouter>
-                    </AppContext.Provider>
-                </React.StrictMode>
-            </div>
-        );
-    }
+    return (
+        <div className="App container">
+            <React.StrictMode>
+                <AppContext.Provider value={contextValue}>
+                    { errors ? <ErrorMessages errors={errors} /> : null }
+                    { statusMessage ? <StatusMessage message={statusMessage} /> : null }
+                    <BrowserRouter>
+                        { ! loaded ? <LoaderWidget /> : null }
+                        <IssueBrowser />
+                    </BrowserRouter>
+                </AppContext.Provider>
+            </React.StrictMode>
+        </div>
+    );
 }
 
 export default App

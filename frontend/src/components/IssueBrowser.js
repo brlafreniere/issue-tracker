@@ -1,4 +1,5 @@
-import React, { useContext } from "react"
+import React, { useContext, useEffect, useState } from "react"
+import { useCookies } from "react-cookie"
 import Issues from "../modules/issues"
 import Users from "../modules/user"
 
@@ -12,19 +13,30 @@ import {
 } from "react-router-dom"
 
 import "./IssueBrowser.css";
-import AppContext from "../AppContext"
-
-const IssueBrowserContext = React.createContext();
-
-export default function IssueBrowserWithHistory(props) {
-    let history = useHistory()
-    return (<IssueBrowser history={history} />)
-}
+import { AppContext } from "../App"
 
 const NewIssueForm = (props) => {
-    const context = useContext(IssueBrowserContext)
+    const appContext = useContext(AppContext)
+    const history = useHistory();
+
+    const createIssue = (event) => {
+        event.preventDefault()
+        appContext.setLoaded(false)
+
+        let payload = {
+            title: event.target.title.value,
+            body: event.target.body.value }
+
+        Issues.create(payload)
+            .then(response => { 
+                props.refreshIssues()
+                history.push('/')
+            })
+            .catch(error => { console.log(error) })
+    }
+
     return (
-        <form onSubmit={context.createIssue}>
+        <form onSubmit={createIssue}>
             <div className="form-group">
                 <label htmlFor="title">Title</label>
                 <input className="form-control" name="title" type="text" />
@@ -39,16 +51,28 @@ const NewIssueForm = (props) => {
 }
 
 const IssueDetail = (props) => {
-    const context = useContext(IssueBrowserContext)
+    const appContext = useContext(AppContext)
+    const history = useHistory()
     let {id} = useParams()
-    let issue = context.issues.find(issue => issue.id === id)
+
+    let issue = props.issues.find(issue => issue.id === id)
+
+    const deleteIssue = (issue_id) => {
+        appContext.setLoaded(false)
+
+        Issues.delete(issue_id)
+            .then(response => { 
+                props.refreshIssues() 
+                history.push('/')
+            })
+    }
 
     if (issue) {
         return (
             <div>
                 <h1 className="card-title">{issue.title}</h1>
                 <p className="card-text">{issue.body}</p>
-                <button className="btn btn-primary" onClick={(e) => context.deleteIssue(issue.id)}>Delete</button>
+                <button className="btn btn-primary" onClick={(e) => deleteIssue(issue.id)}>Delete</button>
             </div>
         )
     } else {
@@ -56,45 +80,27 @@ const IssueDetail = (props) => {
     }
 }
 
-const IssueListItem = (props) => {
-    return (
-        <li className="list-group-item" key={props.issue.id}>
-            <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
-        </li>
-    )
-}
 
 const IssueList = (props) => {
-    const context = useContext(IssueBrowserContext)
-    return (
-        <ul className="list-group list-group-flush">
-            {context.issues.map(issue => <IssueListItem key={issue.id} issue={issue} />)}
-        </ul>
-    )
+    const IssueListItem = (props) => {
+        return (
+            <li className="list-group-item" key={props.issue.id}>
+                <Link to={"/issues/" + props.issue.id}>{props.issue.title}</Link>
+            </li>
+        )
+    }
+
+    if (props.issues.length > 0) {
+        return (
+            <ul className="list-group list-group-flush">
+                {props.issues.map(issue => <IssueListItem key={issue.id} issue={issue} />)}
+            </ul>
+        )
+    } else {
+        return (<div>Looks like there aren't any issues.</div>)
+    }
 }
 
-const MainSwitch = (props) => {
-    return (
-        <Switch>
-            <Route exact path="/users/registration">
-                <UserRegistrationWithHistory />
-            </Route>
-
-            <Route exact path="/issues/create/">
-                <NewIssueForm />
-            </Route>
-
-            <Route exact path="/issues/:id">
-                <IssueDetail />
-            </Route>
-
-            <Route exact path="/">
-                <IssueList />
-            </Route>
-
-        </Switch>
-    )
-}
 
 const NoResponseFromServer = (props) => {
     if (props.noResponse) {
@@ -119,90 +125,85 @@ const Navigation = (props) => {
 }
 
 
-class IssueBrowser extends React.Component {
-    static contextType = AppContext
+const IssueBrowser = (props) => {
+    const appContext = useContext(AppContext)
 
-    deleteIssue = (issue_id) => {
-        this.context.setLoaded(false)
+    let [issues, setIssues] = useState([])
+    let [loaded, setLoaded] = useState(false)
+    let [noResponse, setNoResponse] = useState(false)
 
-        Issues.delete(issue_id)
-            .then(response => { 
-                this.refreshIssues() 
-                this.props.history.push('/')
-            })
-    }
-
-    createIssue = (event) => {
-        event.preventDefault()
-        this.context.setLoaded(false)
-
-        let payload = {
-            title: event.target.title.value,
-            body: event.target.body.value }
-
-        Issues.create(payload)
-            .then(response => { 
-                this.refreshIssues()
-                this.props.history.push('/')
-            })
-            .catch(error => { console.log(error) })
-    }
-
-    state = {
-        issues: [],
-        noResponse: false,
-
-        createIssue: this.createIssue,
-        deleteIssue: this.deleteIssue,
-    }
-
-    render() {
-        return (
-            <div className="mt-5">
-                <Navigation />
-                <NoResponseFromServer noResponse={this.state.noResponse} />
-                <div className="p-3 border border-top-0 rounded-bottom">
-                    <IssueBrowserContext.Provider value={this.state}>
-                        <MainSwitch />
-                    </IssueBrowserContext.Provider>
-                </div>
-            </div>
-        )
-    }
-
-    refreshIssues = () => {
+    const refreshIssues = () => {
         Issues.getAll()
             .then(issues => {
-                this.setState({issues})
-                this.context.setLoaded(true)
+                setIssues(issues)
+                setLoaded(true)
+                appContext.setLoaded(true)
              })
             .catch(error => {
                 if (!error.response) { 
-                    this.setState({noResponse: true})
+                    setNoResponse(true)
                 }
-                this.context.setLoaded(true)
+                appContext.setLoaded(true)
             })
     }
 
-    componentDidMount() {
-        this.refreshIssues()
+    useEffect(() => {
+        if (!loaded) { refreshIssues() }
+    })
+
+    const MainSwitch = (props) => {
+        return (
+            <Switch>
+                <Route exact path="/users/registration">
+                    <UserRegistration />
+                </Route>
+
+                <Route exact path="/issues/create/">
+                    <NewIssueForm refreshIssues={refreshIssues} />
+                </Route>
+
+                <Route exact path="/issues/:id">
+                    <IssueDetail issues={issues} refreshIssues={refreshIssues} />
+                </Route>
+
+                <Route exact path="/">
+                    <IssueList issues={issues} />
+                </Route>
+
+            </Switch>
+        )
     }
+
+    return (
+        <div className="mt-5">
+            <Navigation />
+            <NoResponseFromServer noResponse={noResponse} />
+            <div className="p-3 border border-top-0 rounded-bottom">
+                <MainSwitch />
+            </div>
+        </div>
+    )
 }
 
-function UserRegistrationWithHistory(props) {
-    let history = useHistory();
-    return (<UserRegistration history={history} />)
-}
+export default IssueBrowser
 
-class UserRegistration extends React.Component {
-    static contextType = AppContext
+const UserRegistration = (props) => {
+    const appContext = useContext(AppContext)
+    const [ , setCookie, ] = useCookies(['auth-token']);
 
-    registerUser = (event) => {
+    useEffect(() => {
+        return () => {
+            if (appContext.messagesRendered) {
+                appContext.setErrors(null)
+                appContext.setStatusMessage(null)
+                appContext.setMessagesRendered(null)
+            }
+        }
+    }, [])
+
+    const registerUser = (event) => {
         event.preventDefault()
-        this.context.setLoaded(false)
-
-        // TODO: check if password matches confirmation, display error message
-        // if it doesn't
+        appContext.setLoaded(false)
 
         let payload = {
             first_name: event.target.first_name.value,
@@ -212,52 +213,42 @@ class UserRegistration extends React.Component {
 
         Users.create(payload)
             .then(response => { 
-                this.context.setStatusMessage("success", "User successfully registered.")
-                this.context.setLoaded(true)
+                setCookie('auth-token', response.jwt)
+                appContext.setStatusMessage({type: "success", text: "User successfully registered."})
+                appContext.setLoaded(true)
             })
             .catch(error => { 
-                if (error.response.data.messages) { this.context.setErrorMessages(error.response.data.messages) }
-                this.context.setLoaded(true)
+                console.log(error.response)
+                if (error.response.data.messages) { appContext.setErrors(error.response.data.messages) }
+                appContext.setLoaded(true)
             })
-
-        this.setState({redirect: true})
     }
 
-    componentWillUnmount() {
-        this.context.clearAllMessages()
-    }
-
-    componentDidMount() {
-        this.context.clearAllMessages()
-    }
-
-    render() {
-        return (
-            <form onSubmit={this.registerUser}>
-                <div className="form-group">
-                    <label htmlFor="first_name">First Name:</label>
-                    <input name="first_name" type="text" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="last_name">Last Name:</label>
-                    <input name="last_name" type="text" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="email_address">Email Address:</label>
-                    <input name="email_address" type="text" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password:</label>
-                    <input name="password" type="password" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Confirm Password:</label>
-                    <input name="password" type="password" className="form-control" />
-                </div>
-                <div className="form-group">
-                    <input className="btn btn-primary form-control" type="submit" value="Register" />
-                </div>
-            </form>
-        )
-    }
+    return (
+        <form onSubmit={registerUser}>
+            <div className="form-group">
+                <label htmlFor="first_name">First Name:</label>
+                <input name="first_name" type="text" className="form-control" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="last_name">Last Name:</label>
+                <input name="last_name" type="text" className="form-control" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="email_address">Email Address:</label>
+                <input name="email_address" type="text" className="form-control" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="password">Password:</label>
+                <input name="password" type="password" className="form-control" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="password">Confirm Password:</label>
+                <input name="password" type="password" className="form-control" />
+            </div>
+            <div className="form-group">
+                <input className="btn btn-primary form-control" type="submit" value="Register" />
+            </div>
+        </form>
+    )
 }

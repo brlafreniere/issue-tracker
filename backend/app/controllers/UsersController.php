@@ -33,7 +33,9 @@ class UsersController extends ControllerBase {
                 $payload = ["user_id" => $user->id];
                 $jwt = IssueTracker\JWT::generate_token($payload);
                 $JSONResponse = Json::encode(["jwt" => $jwt]);
-                echo $JSONResponse;
+                $this->response->setStatusCode(200);
+                $this->response->setContent($JSONResponse);
+                $this->response->send();
             }
         } catch (Exception $e) { 
             debug($e);
@@ -41,7 +43,9 @@ class UsersController extends ControllerBase {
             // 1062: duplicate entry primary index (email address)
             if ($e->errorInfo[1] == 1062) {
                 $this->response->setStatusCode(422);
-                echo Json::encode(["messages" => [["message" => "Email address already taken."]] ]);
+                $content = Json::encode(["messages" => [["message" => "Email address already taken."]] ]);
+                $this->response->setContent($content);
+                $this->response->send();
             }
         }
     }
