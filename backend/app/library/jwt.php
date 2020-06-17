@@ -5,8 +5,8 @@ namespace IssueTracker;
 require(__DIR__ . "/../../vendor/firebase/php-jwt/src/JWT.php");
 
 class JWT {
-    const PRIVATE_KEY_PATH = __DIR__ . "/jwtRS256key";
-    const PUBLIC_KEY_PATH = __DIR__ . "/jwtRS256key.pub";
+    const PRIVATE_KEY_PATH = __DIR__ . "/../keys/jwtRS256key";
+    const PUBLIC_KEY_PATH = __DIR__ . "/../keys/jwtRS256key.pub";
  
     static $private_key;
     static $public_key;
